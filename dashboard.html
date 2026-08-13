@@ -10,9 +10,12 @@
 </head>
 <body>
 
+  <!-- Mobile Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="app-layout">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="logo-sm">ES</div>
         <div>
@@ -72,8 +75,19 @@
     <!-- Main Content -->
     <div class="main-content">
       <header class="topbar">
-        <h1>ড্যাশবোর্ড</h1>
-        <div id="currentDate" class="text-muted"></div>
+        <button class="menu-toggle" id="menuToggle" aria-label="মেনু">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <div class="topbar-title">
+          <h1>ড্যাশবোর্ড</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div class="topbar-date" id="currentDate"></div>
+        </div>
       </header>
 
       <main class="content-area">
@@ -89,34 +103,78 @@
 
         <div class="card">
           <h3>বর্তমান স্ট্যাটাস</h3>
-          <p><strong>লগইন ইউজার:</strong> <span id="infoEmail">-</span></p>
-          <p><strong>রোল:</strong> <span id="infoRole">-</span></p>
-          <p class="text-muted" style="margin-top: 12px; font-size: 0.875rem;">
-            নোট: Supabase credentials সেট না করা থাকলে লগইন কাজ করবে না।
-          </p>
+          <div class="status-row">
+            <p><strong>লগইন ইউজার:</strong> <span id="infoEmail">-</span></p>
+            <p><strong>রোল:</strong> <span id="infoRole">-</span></p>
+          </div>
         </div>
       </main>
     </div>
   </div>
 
   <script type="module">
-    import { protectPage, logout, getUserRole } from './js/auth.js';
-    import { supabaseClient } from './js/supabaseClient.js';
+    import { protectPage, logout } from './js/auth.js';
 
-    // Protect this page
+    // ========== Mobile Sidebar Toggle ==========
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuToggle = document.getElementById('menuToggle');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    menuToggle.addEventListener('click', () => {
+      if (sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when a nav item is clicked (mobile)
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
+    });
+
+    // ========== Auth ==========
     const authData = await protectPage(['admin', 'staff']);
 
     if (authData) {
       const { user, role } = authData;
 
-      // Update UI
-      document.getElementById('userName').textContent = user.email?.split('@')[0] || 'User';
-      document.getElementById('userRole').textContent = role;
-      document.getElementById('userAvatar').textContent = (user.email?.[0] || 'U').toUpperCase();
+      // Fetch full_name from profiles if available
+      let displayName = user.email?.split('@')[0] || 'User';
+      try {
+        const { data } = await (await import('./js/supabaseClient.js')).supabaseClient
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        if (data?.full_name) displayName = data.full_name;
+      } catch (e) {}
+
+      document.getElementById('userName').textContent = displayName;
+      document.getElementById('userRole').textContent = role === 'admin' ? 'অ্যাডমিন' : 'স্টাফ';
+      document.getElementById('userAvatar').textContent = (displayName[0] || 'U').toUpperCase();
       document.getElementById('infoEmail').textContent = user.email || '-';
       document.getElementById('infoRole').textContent = role === 'admin' ? 'অ্যাডমিন (মালিক)' : 'স্টাফ (কর্মচারী)';
 
-      // Current date
+      // Current date (Bengali)
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('currentDate').textContent = new Date().toLocaleDateString('bn-BD', options);
     }
@@ -133,4 +191,3 @@
   </script>
 </body>
 </html>
-
