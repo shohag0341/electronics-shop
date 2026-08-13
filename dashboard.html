@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ড্যাশবোর্ড - Electronics Shop Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-sm">ES</div>
+        <div>
+          <h2>Electronics Shop</h2>
+          <span>Management System</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item active">
+          <span class="icon">📊</span> ড্যাশবোর্ড
+        </a>
+        <a href="#" class="nav-item" data-module="products">
+          <span class="icon">📱</span> পণ্য
+        </a>
+        <a href="#" class="nav-item" data-module="suppliers">
+          <span class="icon">🚚</span> সাপ্লায়ার
+        </a>
+        <a href="#" class="nav-item" data-module="customers">
+          <span class="icon">👥</span> কাস্টমার
+        </a>
+        <a href="#" class="nav-item" data-module="purchase">
+          <span class="icon">🛒</span> পারচেজ
+        </a>
+        <a href="#" class="nav-item" data-module="sales">
+          <span class="icon">💰</span> সেলস
+        </a>
+        <a href="#" class="nav-item" data-module="stock">
+          <span class="icon">📦</span> স্টক
+        </a>
+        <a href="#" class="nav-item" data-module="dues">
+          <span class="icon">📋</span> বকেয়া
+        </a>
+        <a href="#" class="nav-item" data-module="expenses">
+          <span class="icon">💸</span> খরচ
+        </a>
+        <a href="#" class="nav-item" data-module="reports">
+          <span class="icon">📈</span> রিপোর্ট
+        </a>
+        <a href="#" class="nav-item" data-module="settings">
+          <span class="icon">⚙️</span> সেটিংস
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <div class="user-details">
+            <div class="name" id="userName">লোড হচ্ছে...</div>
+            <div class="role" id="userRole">-</div>
+          </div>
+        </div>
+        <button class="btn-logout" id="logoutBtn">লগআউট</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="topbar">
+        <h1>ড্যাশবোর্ড</h1>
+        <div id="currentDate" class="text-muted"></div>
+      </header>
+
+      <main class="content-area">
+        <div class="card">
+          <h3>স্বাগতম!</h3>
+          <p class="text-muted">
+            আপনি সফলভাবে লগইন করেছেন। এই পেজটি শুধুমাত্র অথেন্টিকেটেড ইউজারদের জন্য।
+          </p>
+          <p style="margin-top: 12px;">
+            পরবর্তী ধাপে আমরা পণ্য, ক্যাটাগরি, ব্র্যান্ড মডিউল এবং বাকি ফিচারগুলো যোগ করব।
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>বর্তমান স্ট্যাটাস</h3>
+          <p><strong>লগইন ইউজার:</strong> <span id="infoEmail">-</span></p>
+          <p><strong>রোল:</strong> <span id="infoRole">-</span></p>
+          <p class="text-muted" style="margin-top: 12px; font-size: 0.875rem;">
+            নোট: Supabase credentials সেট না করা থাকলে লগইন কাজ করবে না।
+          </p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { protectPage, logout, getUserRole } from './js/auth.js';
+    import { supabaseClient } from './js/supabaseClient.js';
+
+    // Protect this page
+    const authData = await protectPage(['admin', 'staff']);
+
+    if (authData) {
+      const { user, role } = authData;
+
+      // Update UI
+      document.getElementById('userName').textContent = user.email?.split('@')[0] || 'User';
+      document.getElementById('userRole').textContent = role;
+      document.getElementById('userAvatar').textContent = (user.email?.[0] || 'U').toUpperCase();
+      document.getElementById('infoEmail').textContent = user.email || '-';
+      document.getElementById('infoRole').textContent = role === 'admin' ? 'অ্যাডমিন (মালিক)' : 'স্টাফ (কর্মচারী)';
+
+      // Current date
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('currentDate').textContent = new Date().toLocaleDateString('bn-BD', options);
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const result = await logout();
+      if (result.success) {
+        window.location.href = 'index.html';
+      } else {
+        alert('লগআউট ব্যর্থ: ' + result.message);
+      }
+    });
+  </script>
+</body>
+</html>
+
